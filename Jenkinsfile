@@ -48,32 +48,17 @@ pipeline {
             }
         }
 
-        stage('Verify Deployment (Curl Readiness)') {
+        stage('Deploy via Docker Compose') {
             steps {
                 script {
-                    echo "Waiting for Java application to become healthy..."
-                    timeout(time: 3, unit: 'MINUTES') {
-                        waitUntil {
-                            def status = sh(
-                                script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${APP_PORT}/ || true", 
-                                returnStdout: true
-                            ).trim()
-                            
-                            // Accept 200, 404, or 302 (Redirect) as valid server responsiveness
-                            if (status == '200' || status == '404' || status == '302') {
-                                echo "Application endpoint is active and responding (HTTP ${status})."
-                                return true
-                            } else {
-                                echo "Endpoint returned HTTP ${status}. Retrying..."
-                                sleep 5
-                                return false
-                            }
-                        }
-                    }
+                    echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} on port ${APP_PORT}..."
+                    // Stop any existing container cleanly to avoid the ContainerConfig bug
+                    sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=${APP_PORT} docker-compose down || true"
+                    // Bring up the new container fresh
+                    sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=${APP_PORT} docker-compose up -d"
                 }
             }
         }
-    }
 
     post {
         success {
