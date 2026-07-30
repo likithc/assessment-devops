@@ -5,7 +5,7 @@ services:
     image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
     container_name: java_app_container
     ports:
-      - "${APP_PORT:-9090}:8080"
+      - "9090:8080"
     restart: unless-stopped
     deploy:
       resources:
