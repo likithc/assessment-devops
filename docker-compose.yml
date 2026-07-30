@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    # Uses variables passed from the Jenkins pipeline environment
+    image: ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
+    container_name: java_app_container
+    ports:
+      - "${APP_PORT}:8080"
+    restart: unless-stopped
+    # Basic resource limits for added security and stability
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+    environment:
+      - SPRING_PROFILES_ACTIVE=production # Common if using Spring Boot, safe to leave if not
