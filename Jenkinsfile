@@ -19,7 +19,7 @@ pipeline {
 
         stage('Install Dependencies and Run Tests') {
             steps {
-                // Using a temporary Maven container for isolated testing
+              
                 script {
                     docker.image('maven:3.9-eclipse-temurin-17-alpine').inside {
                         sh 'mvn test'
@@ -44,9 +44,9 @@ pipeline {
             steps {
                 script {
                     echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} on EC2 port ${APP_PORT}..."
-                    // Gracefully stop and remove older containers to bypass the Compose ContainerConfig bug
+                    
                     sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=${APP_PORT} docker-compose down || true"
-                    // Bring up the container fresh
+                  
                     sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=${APP_PORT} docker-compose up -d"
                 }
             }
@@ -58,7 +58,7 @@ pipeline {
                     echo "Verifying application container state on EC2..."
                     timeout(time: 2, unit: 'MINUTES') {
                         waitUntil {
-                            // Inspect the container directly on the Docker daemon to ensure it is running
+                       
                             def containerState = sh(
                                 script: "docker inspect -f '{{.State.Running}}' java_app_container || echo 'false'",
                                 returnStdout: true
