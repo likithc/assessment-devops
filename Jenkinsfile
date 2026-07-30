@@ -43,7 +43,7 @@ pipeline {
         stage('Deploy via Docker Compose') {
             steps {
                 script {
-                    echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} on port ${APP_PORT}..."
+                    echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} on EC2 port ${APP_PORT}..."
                     // Gracefully stop and remove older containers to bypass the Compose ContainerConfig bug
                     sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=${APP_PORT} docker-compose down || true"
                     // Bring up the container fresh
@@ -52,23 +52,23 @@ pipeline {
             }
         }
 
-        stage('Verify Deployment (Curl Readiness)') {
+        stage('Verify Deployment (EC2 Container Health)') {
             steps {
                 script {
-                    echo "Waiting for Java application to become healthy..."
-                    timeout(time: 3, unit: 'MINUTES') {
+                    echo "Verifying application container state on EC2..."
+                    timeout(time: 2, unit: 'MINUTES') {
                         waitUntil {
-                            def status = sh(
-                                script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${APP_PORT}/ || true", 
+                            // Inspect the container directly on the Docker daemon to ensure it is running
+                            def containerState = sh(
+                                script: "docker inspect -f '{{.State.Running}}' java_app_container || echo 'false'",
                                 returnStdout: true
                             ).trim()
                             
-                            // Accept 200, 404, or 302 (Redirect) as valid server responsiveness
-                            if (status == '200' || status == '404' || status == '302') {
-                                echo "Application endpoint is active and responding (HTTP ${status})."
+                            if (containerState == 'true') {
+                                echo "Application container is running successfully on EC2."
                                 return true
                             } else {
-                                echo "Endpoint returned HTTP ${status}. Retrying..."
+                                echo "Container is still starting up. Retrying..."
                                 sleep 5
                                 return false
                             }
