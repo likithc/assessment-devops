@@ -6,7 +6,7 @@ pipeline {
         IMAGE_NAME = 'likithc/simple-java-app'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'docker-cred'
-        APP_PORT = '9090' // Updated to avoid Jenkins conflict
+        APP_PORT = '7070' // Configured to avoid Jenkins port 8080 conflict
     }
 
     stages {
@@ -59,8 +59,9 @@ pipeline {
                                 returnStdout: true
                             ).trim()
                             
-                            if (status == '200' || status == '404') {
-                                echo "Application endpoint is active and responding."
+                            // Accept 200, 404, or 302 (Redirect) as valid server responsiveness
+                            if (status == '200' || status == '404' || status == '302') {
+                                echo "Application endpoint is active and responding (HTTP ${status})."
                                 return true
                             } else {
                                 echo "Endpoint returned HTTP ${status}. Retrying..."
