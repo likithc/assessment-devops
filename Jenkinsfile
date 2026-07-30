@@ -88,10 +88,12 @@ pipeline {
 
     post {
         success {
-            slackSend(channel: "${SLACK_CHANNEL}", color: 'good', message: "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' deployed successfully.")
+            // slackSend(channel: "${SLACK_CHANNEL}", color: 'good', message: "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' deployed successfully.")
+            echo "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' deployed successfully."
         }
         failure {
-            slackSend(channel: "${SLACK_CHANNEL}", color: 'danger', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'. Initiating rollback...")
+            // slackSend(channel: "${SLACK_CHANNEL}", color: 'danger', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'. Initiating rollback...")
+            echo "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'. Initiating rollback..."
             
             // Rollback Support: Redeploy previous successful image
             script {
