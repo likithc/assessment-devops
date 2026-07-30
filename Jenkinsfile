@@ -6,7 +6,7 @@ pipeline {
         DOCKER_REGISTRY = 'docker.io'
         DOCKER_CREDENTIALS_ID = 'docker-cred' 
         GITHUB_CREDENTIALS_ID = 'github-credentials'      
-        IMAGE_NAME = 'my-company/simple-java-app'
+        IMAGE_NAME = 'likithc/simple-java-app'
         IMAGE_TAG = "${env.BUILD_NUMBER}"                
         APP_PORT = '8080'
         SLACK_CHANNEL = '#deployments'
