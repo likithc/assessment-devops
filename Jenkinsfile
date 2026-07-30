@@ -6,7 +6,7 @@ pipeline {
         IMAGE_NAME = 'likithc/simple-java-app'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'docker-cred'
-        APP_PORT = '7070' // Configured to avoid Jenkins port 8080 conflict
+        APP_PORT = '7070' 
     }
 
     stages {
