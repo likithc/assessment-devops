@@ -19,6 +19,7 @@ pipeline {
 
         stage('Install Dependencies and Run Tests') {
             steps {
+                // Using a temporary Maven container for isolated testing
                 script {
                     docker.image('maven:3.9-eclipse-temurin-17-alpine').inside {
                         sh 'mvn test'
@@ -43,22 +44,40 @@ pipeline {
             steps {
                 script {
                     echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} on port ${APP_PORT}..."
-                    sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=${APP_PORT} docker-compose up -d --force-recreate"
-                }
-            }
-        }
-
-        stage('Deploy via Docker Compose') {
-            steps {
-                script {
-                    echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG} on port ${APP_PORT}..."
-                    // Stop any existing container cleanly to avoid the ContainerConfig bug
+                    // Gracefully stop and remove older containers to bypass the Compose ContainerConfig bug
                     sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=${APP_PORT} docker-compose down || true"
-                    // Bring up the new container fresh
+                    // Bring up the container fresh
                     sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=${APP_PORT} docker-compose up -d"
                 }
             }
         }
+
+        stage('Verify Deployment (Curl Readiness)') {
+            steps {
+                script {
+                    echo "Waiting for Java application to become healthy..."
+                    timeout(time: 3, unit: 'MINUTES') {
+                        waitUntil {
+                            def status = sh(
+                                script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${APP_PORT}/ || true", 
+                                returnStdout: true
+                            ).trim()
+                            
+                            // Accept 200, 404, or 302 (Redirect) as valid server responsiveness
+                            if (status == '200' || status == '404' || status == '302') {
+                                echo "Application endpoint is active and responding (HTTP ${status})."
+                                return true
+                            } else {
+                                echo "Endpoint returned HTTP ${status}. Retrying..."
+                                sleep 5
+                                return false
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     post {
         success {
@@ -71,7 +90,8 @@ pipeline {
                 if (prevBuild) {
                     def PREV_TAG = prevBuild.number
                     echo "Rolling back to previous successful build tag: ${PREV_TAG}"
-                    sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${PREV_TAG} APP_PORT=${APP_PORT} docker-compose up -d --force-recreate"
+                    sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${PREV_TAG} APP_PORT=${APP_PORT} docker-compose down || true"
+                    sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${PREV_TAG} APP_PORT=${APP_PORT} docker-compose up -d"
                 } else {
                     echo "No previous successful build found. Rollback aborted."
                 }
