@@ -39,9 +39,9 @@ pipeline {
         stage('Deploy via Docker Compose') {
             steps {
                 script {
-                    // Pass the current build tag to docker-compose so it pulls the exact image we just built
-                    env.IMAGE_TAG = "${IMAGE_TAG}"
-                    sh 'docker-compose up -d'
+                    echo "Deploying ${IMAGE_NAME}:${IMAGE_TAG}..."
+                    // Explicitly export environment variables for docker-compose
+                    sh "IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} APP_PORT=8080 docker-compose up -d --force-recreate"
                 }
             }
         }
