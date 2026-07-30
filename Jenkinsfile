@@ -3,7 +3,7 @@ pipeline {
 
     // Define pipeline variables
     environment {
-        DOCKER_REGISTRY = 'my-private-registry.com'
+        DOCKER_REGISTRY = 'https://index.docker.io/v1/'
         DOCKER_CREDENTIALS_ID = 'docker-cred' 
         GITHUB_CREDENTIALS_ID = 'github-credentials'      
         IMAGE_NAME = 'my-company/simple-java-app'
